@@ -1,0 +1,104 @@
+<?php
+declare(strict_types=1);
+
+use Metasync\LogViewer\Block\Adminhtml\Log\View;
+
+/** @var View $block */
+$logFiles = $block->getLogFiles();
+$ajaxUrl = $block->getAjaxUrl();
+
+?>
+<table class="admin__table-secondary">
+    <thead>
+    <tr class="admin__table-row">
+        <th class="admin__table-th"><?= $block->escapeHtml(__('File Name')) ?></th>
+        <th class="admin__table-th"><?= $block->escapeHtml(__('Actions')) ?></th>
+    </tr>
+    </thead>
+    <tbody>
+    <?php if (count($logFiles) > 0) : ?>
+        <?php foreach ($logFiles as $logFile) : ?>
+            <tr class="admin__table-row">
+                <td class="admin__table-td"><?= $block->escapeHtml($this->getHumanName($logFile)) ?></td>
+                <td class="admin__table-td">
+                    <a href="#" class="download-link" data-file-path="<?= $logFile ?>" target="_blank"><?= $block->escapeHtml(__('Download')) ?></a>
+                </td>
+            </tr>
+        <?php endforeach; ?>
+    <?php else : ?>
+        <tr class="admin__table-row">
+            <td colspan="2" class="admin__table-td"><?= $block->escapeHtml(__('No log files found.')) ?></td>
+        </tr>
+    <?php endif; ?>
+    </tbody>
+</table>
+
+<style>
+    .admin__table-secondary {
+        width: 100%;
+        max-width: 100%;
+        margin-bottom: 10px;
+        border: 1px solid #d1d1d1;
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+    .admin__table-row {
+        border-bottom: 1px solid #d1d1d1;
+    }
+
+    .admin__table-th,
+    .admin__table-td {
+        padding: 12px 20px;
+        font-size: 14px;
+        line-height: 1.42857143;
+        vertical-align: top;
+        border-right: 1px solid #d1d1d1;
+    }
+
+    .admin__table-th:last-child,
+    .admin__table-td:last-child {
+        border-right: none;
+    }
+
+    .admin__table-th {
+        font-weight: 600;
+        background-color: #f7f7f7;
+        color: #333;
+    }
+
+    .admin__table-td {
+        background-color: #fff;
+        color: #333;
+    }
+</style>
+
+<script>
+    require([
+        'jquery',
+    ], function ($) {
+        $(document).ready(function () {
+            // Trigger file download via AJAX
+            $('body').on('click', '.download-link', function (e) {
+                e.preventDefault();
+                const filePath = $(this).attr('data-file-path');
+
+                $.ajax({
+                    url: '<?= $ajaxUrl ?>',
+                    type: 'post',
+                    data: {file_path: filePath},
+                    success: function (response) {
+                        const blob = new Blob([response], {type: 'application/octet-stream'});
+                        const link = document.createElement('a');
+                        link.href = window.URL.createObjectURL(blob);
+                        link.download = filePath.split('/').pop();
+                        link.click();
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error downloading file: ' + error);
+                    }
+                });
+            });
+        });
+    });
+</script>
